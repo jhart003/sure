@@ -393,6 +393,10 @@ export default class extends Controller {
   }
 
   get _d3XScale() {
+    // Handle edge case of single data point
+    if (this.dataValue.length === 1) {
+      return d3.scaleLinear().domain([0, 1]).range([0, this._d3ContainerWidth]);
+    }
     return d3
       .scaleLinear()
       .domain([0, this.dataValue.length - 1])
@@ -400,9 +404,9 @@ export default class extends Controller {
   }
 
   get _d3YScale() {
-    const maxExpenses = d3.max(this.dataValue, (d) => d.expenses);
-    const maxIncome = d3.max(this.dataValue, (d) => d.income);
-    const maxValue = Math.max(maxExpenses, maxIncome);
+    const maxExpenses = d3.max(this.dataValue, (d) => d.expenses) || 0;
+    const maxIncome = d3.max(this.dataValue, (d) => d.income) || 0;
+    const maxValue = Math.max(maxExpenses, maxIncome) || 100; // Default if all zero
 
     return d3
       .scaleLinear()
