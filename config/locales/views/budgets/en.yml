@@ -12,6 +12,7 @@ en:
       variance: Variance
       under: under budget
       over: over budget
+      over_budget: Over Budget
       spent: spent
       remaining: remaining
       category_breakdown: Category Breakdown

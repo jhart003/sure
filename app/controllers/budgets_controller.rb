@@ -7,7 +7,17 @@ class BudgetsController < ApplicationController
 
   def show
     @variance_period_type = params[:variance_period] || "month"
-    @variance_start_date = params[:variance_start] ? Date.parse(params[:variance_start]) : @budget.start_date
+    
+    # Parse variance start date safely
+    @variance_start_date = if params[:variance_start].present?
+      begin
+        Date.parse(params[:variance_start])
+      rescue ArgumentError, TypeError
+        @budget.start_date
+      end
+    else
+      @budget.start_date
+    end
     
     calculator = Budget::VarianceCalculator.new(
       family: Current.family,

@@ -40,7 +40,11 @@
       </div>
       <div class="flex justify-between text-xs text-secondary">
         <span><%= number_to_percentage(variance_percent_width, precision: 1) %> <%= t("budgets.variance.spent") %></span>
-        <span><%= number_to_percentage(100 - variance_percent_width, precision: 1) %> <%= t("budgets.variance.remaining") %></span>
+        <% if variance_remaining_percent > 0 %>
+          <span><%= number_to_percentage(variance_remaining_percent, precision: 1) %> <%= t("budgets.variance.remaining") %></span>
+        <% else %>
+          <span class="text-destructive"><%= t("budgets.variance.over_budget") %></span>
+        <% end %>
       </div>
     </div>
   </div>

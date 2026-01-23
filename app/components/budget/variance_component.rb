@@ -43,4 +43,12 @@ class Budget::VarianceComponent < ApplicationComponent
       [ [ actual_percent, 0 ].max, 100 ].min
     end
   end
+
+  def variance_remaining_percent
+    if variance_data[:total_budgeted] == 0
+      100
+    else
+      [ 100 - variance_percent_width, 0 ].max
+    end
+  end
 end

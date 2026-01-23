@@ -26,10 +26,6 @@ export default class extends Controller {
         "X-Requested-With": "XMLHttpRequest"
       }
     })
-    .then(response => response.text())
-    .then(html => {
-      // Turbo will handle the stream update
-    })
     .catch(error => {
       console.error("Error updating variance:", error)
     })
