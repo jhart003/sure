@@ -2,6 +2,16 @@
 
 This guide will help you setup, update, and maintain your self-hosted Sure application with Docker Compose. Docker Compose is the most popular and recommended way to self-host the Sure app.
 
+## 📚 Documentation
+
+Choose the guide that fits your needs:
+
+- **[Quick Start Guide](DOCKER_QUICKSTART.md)** - Get up and running in 5 minutes
+- **[Deployment Checklist](DOCKER_CHECKLIST.md)** - Complete deployment checklist
+- **[Comprehensive Guide](DOCKER_DEPLOYMENT.md)** - In-depth deployment documentation
+- **[Security Best Practices](DOCKER_SECURITY.md)** - Security hardening guide
+- **This guide** - Standard self-hosting setup (below)
+
 ## Setup Guide
 
 Follow the guide below to get your app running.
