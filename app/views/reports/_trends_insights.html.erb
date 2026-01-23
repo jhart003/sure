@@ -6,6 +6,26 @@
       </h3>
 
       <% if trends_data.any? %>
+        <%# Spending Trends Chart %>
+        <% 
+          chart_data = trends_data.map do |trend|
+            {
+              month: trend[:month],
+              expenses: trend[:expenses].abs,
+              income: trend[:income].abs
+            }
+          end
+        %>
+        <div class="mb-6 bg-surface-inset rounded-lg p-4">
+          <div 
+            id="spending-trends-chart"
+            data-controller="spending-trends-chart" 
+            data-spending-trends-chart-data-value="<%= chart_data.to_json %>"
+            class="w-full"
+            style="height: 300px;">
+          </div>
+        </div>
+
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>

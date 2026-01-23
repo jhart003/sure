@@ -85,6 +85,13 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
     assert_select "th", text: I18n.t("reports.trends.month")
   end
 
+  test "index includes spending trends chart" do
+    get reports_path(period_type: :monthly)
+    assert_response :ok
+    assert_select "div[data-controller='spending-trends-chart']", 1, "Should have spending trends chart"
+    assert_select "#spending-trends-chart", 1, "Should have chart container with ID"
+  end
+
   test "index handles invalid date parameters gracefully" do
     get reports_path(
       period_type: :custom,
