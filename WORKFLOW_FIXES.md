@@ -15,9 +15,31 @@
 - Updated repository definition to use signed-by syntax: `deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg]`
 
 **Files Modified**:
-- `Dockerfile.test` (lines 37-38)
+- `Dockerfile.test` (lines 37-44)
 
-### 2. Ruby Linting Failures - Trailing Whitespace
+### 2. Dockerfile.test - Multi-Architecture Chrome Installation
+**Problem**: Chrome is only available for amd64 architecture, not arm64. The initial fix didn't account for multi-platform builds, causing failures when building for ARM64.
+
+**Error**:
+```
+E: Unable to correct problems, you have held broken packages.
+google-chrome-stable:amd64 Depends libasound2:amd64 but it is not installable
+```
+
+**Fix**: Made Chrome installation conditional on amd64 architecture:
+```dockerfile
+RUN if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
+    wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
+    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
+    && apt-get update -qq \
+    && apt-get -y install --no-install-recommends google-chrome-stable; \
+  fi
+```
+
+**Files Modified**:
+- `Dockerfile.test` (lines 36-44)
+
+### 3. Ruby Linting Failures - Trailing Whitespace
 **Problem**: CI lint job was failing due to trailing whitespace in Ruby files, preventing the publish workflow from completing.
 
 **Error**:
@@ -55,9 +77,11 @@ Both Docker workflows (`docker-build-push.yml` and `publish.yml`) were verified 
 
 After these fixes:
 1. ✅ CI lint job should pass (no more trailing whitespace)
-2. ✅ Docker builds should complete successfully (no more apt-key errors)
+2. ✅ Docker builds should complete successfully for both amd64 and arm64 (Chrome only installed on amd64)
 3. ✅ Images should be pushed to GHCR (ghcr.io/jhart003/sure:*)
 4. ✅ Images should be publicly accessible (via automatic visibility update)
+
+**Note**: System tests requiring Chrome will only work on amd64 architecture. The arm64 image can run the application but will skip Chrome-dependent system tests.
 
 ## Testing
 
