@@ -1,0 +1,49 @@
+#!/bin/bash
+# ===========================================================================
+# Docker Test Runner Script
+# ===========================================================================
+# This script provides convenient commands for running tests in Docker
+#
+# Usage:
+#   ./bin/docker-test [options]
+#
+# Options:
+#   all           - Run all tests (default)
+#   unit          - Run unit tests only
+#   system        - Run system tests only
+#   <path>        - Run specific test file or directory
+#
+# Examples:
+#   ./bin/docker-test
+#   ./bin/docker-test unit
+#   ./bin/docker-test system
+#   ./bin/docker-test test/models/account_test.rb
+# ===========================================================================
+
+set -e
+
+COMPOSE_FILE="docker-compose.test.yml"
+TEST_TARGET="${1:-all}"
+
+echo "🧪 Running tests in Docker..."
+
+case "$TEST_TARGET" in
+  all)
+    docker compose -f "$COMPOSE_FILE" run --rm test bin/rails test
+    ;;
+    
+  unit)
+    docker compose -f "$COMPOSE_FILE" run --rm test bin/rails test:db
+    ;;
+    
+  system)
+    docker compose -f "$COMPOSE_FILE" run --rm test bin/rails test:system
+    ;;
+    
+  *)
+    # Run specific test file or directory
+    docker compose -f "$COMPOSE_FILE" run --rm test bin/rails test "$TEST_TARGET"
+    ;;
+esac
+
+echo "✅ Tests complete"

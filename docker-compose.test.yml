@@ -1,0 +1,91 @@
+# ===========================================================================
+# Test Docker Compose Configuration
+# ===========================================================================
+#
+# Purpose:
+# --------
+# This file provides an environment for running tests in isolation.
+# Useful for CI/CD pipelines or running tests locally in containers.
+#
+# Usage:
+# ------
+# Run all tests:
+#   docker compose -f docker-compose.test.yml up --abort-on-container-exit
+#
+# Run specific tests:
+#   docker compose -f docker-compose.test.yml run --rm test bin/rails test test/models/
+#
+# Run system tests:
+#   docker compose -f docker-compose.test.yml run --rm test bin/rails test:system
+#
+# ===========================================================================
+
+x-db-env: &db_env
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  POSTGRES_DB: sure_test
+
+x-test-env: &test_env
+  <<: *db_env
+  RAILS_ENV: test
+  NODE_ENV: test
+  DB_HOST: db
+  DB_PORT: 5432
+  REDIS_URL: redis://redis:6379/2
+  SECRET_KEY_BASE: test_secret_key_base_min_30_chars_long_for_testing_purposes_only
+  RAILS_MAX_THREADS: 5
+  # Disable parallel tests in Docker to avoid conflicts
+  PARALLEL_WORKERS: 1
+
+services:
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+      args:
+        RUBY_VERSION: 3.4.7
+        NODE_VERSION: 20
+    command: bin/rails test
+    volumes:
+      # Mount source for coverage reports
+      - ./coverage:/rails/coverage
+      - ./tmp:/rails/tmp
+    environment:
+      <<: *test_env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sure_test_net
+
+  db:
+    image: postgres:16
+    environment:
+      <<: *db_env
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sure_test_net
+
+  redis:
+    image: redis:7-alpine
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sure_test_net
+
+networks:
+  sure_test_net:
+    driver: bridge

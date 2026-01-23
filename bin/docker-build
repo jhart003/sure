@@ -1,0 +1,161 @@
+#!/bin/bash
+# ===========================================================================
+# Docker Build Script
+# ===========================================================================
+# This script builds Docker images for different environments and optionally
+# pushes them to GitHub Container Registry (GHCR)
+#
+# Usage:
+#   ./bin/docker-build [production|development|test] [--push] [--registry=REGISTRY]
+#
+# Options:
+#   --push              Push image to registry after building
+#   --registry=URL      Registry URL (default: ghcr.io)
+#   --tag=TAG           Additional tag for the image
+#   --platform=PLATFORM Build for specific platform (default: linux/amd64,linux/arm64)
+#
+# Examples:
+#   ./bin/docker-build production
+#   ./bin/docker-build production --push
+#   ./bin/docker-build production --push --registry=ghcr.io/jhart003/sure
+#   ./bin/docker-build production --tag=v1.0.0 --push
+# ===========================================================================
+
+set -e
+
+# Parse arguments
+ENVIRONMENT=""
+PUSH=false
+REGISTRY="ghcr.io"
+ADDITIONAL_TAGS=()
+PLATFORM="linux/amd64,linux/arm64"
+
+for arg in "$@"; do
+  case $arg in
+    production|development|dev|test)
+      ENVIRONMENT="$arg"
+      ;;
+    --push)
+      PUSH=true
+      ;;
+    --registry=*)
+      REGISTRY="${arg#*=}"
+      ;;
+    --tag=*)
+      ADDITIONAL_TAGS+=("${arg#*=}")
+      ;;
+    --platform=*)
+      PLATFORM="${arg#*=}"
+      ;;
+    *)
+      echo "Unknown argument: $arg"
+      exit 1
+      ;;
+  esac
+done
+
+# Default to production if no environment specified
+ENVIRONMENT="${ENVIRONMENT:-production}"
+
+BUILD_COMMIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+RUBY_VERSION=$(cat .ruby-version)
+NODE_VERSION=20
+
+# Determine repository name
+REPO_NAME=$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
+GITHUB_REPO=$(git config --get remote.origin.url 2>/dev/null | sed 's/.*github.com[:/]\(.*\)\.git/\1/' || echo "$REPO_NAME")
+
+echo "🐳 Building Docker image for environment: $ENVIRONMENT"
+echo "📦 Ruby version: $RUBY_VERSION"
+echo "📦 Node.js version: $NODE_VERSION"
+echo "🔖 Commit SHA: $BUILD_COMMIT_SHA"
+echo "🏗️  Platform(s): $PLATFORM"
+if [ "$PUSH" = true ]; then
+  echo "📤 Will push to registry: $REGISTRY"
+fi
+
+echo ""
+
+# Build command setup
+BUILD_ARGS="--build-arg RUBY_VERSION=$RUBY_VERSION --build-arg NODE_VERSION=$NODE_VERSION"
+
+# Setup buildx for multi-platform builds if pushing
+if [ "$PUSH" = true ]; then
+  echo "🔧 Setting up Docker Buildx for multi-platform builds..."
+  docker buildx create --name sure-builder --use 2>/dev/null || docker buildx use sure-builder 2>/dev/null || true
+  BUILD_CMD="docker buildx build"
+  BUILD_ARGS="$BUILD_ARGS --platform $PLATFORM"
+  if [ "$PUSH" = true ]; then
+    BUILD_ARGS="$BUILD_ARGS --push"
+  fi
+else
+  BUILD_CMD="docker build"
+fi
+
+case "$ENVIRONMENT" in
+  production)
+    IMAGE_NAME="${REGISTRY}/${GITHUB_REPO}:latest"
+    BUILD_ARGS="$BUILD_ARGS --build-arg BUILD_COMMIT_SHA=$BUILD_COMMIT_SHA"
+    
+    # Build tags
+    TAGS="-t ${REGISTRY}/${GITHUB_REPO}:latest -t ${REGISTRY}/${GITHUB_REPO}:${BUILD_COMMIT_SHA}"
+    
+    # Add additional tags
+    for tag in "${ADDITIONAL_TAGS[@]}"; do
+      TAGS="$TAGS -t ${REGISTRY}/${GITHUB_REPO}:${tag}"
+    done
+    
+    $BUILD_CMD $BUILD_ARGS $TAGS -f Dockerfile .
+    
+    echo "✅ Production image built successfully"
+    echo "   Tagged as:"
+    echo "     - ${REGISTRY}/${GITHUB_REPO}:latest"
+    echo "     - ${REGISTRY}/${GITHUB_REPO}:${BUILD_COMMIT_SHA}"
+    for tag in "${ADDITIONAL_TAGS[@]}"; do
+      echo "     - ${REGISTRY}/${GITHUB_REPO}:${tag}"
+    done
+    ;;
+    
+  development|dev)
+    TAGS="-t ${REGISTRY}/${GITHUB_REPO}:dev"
+    $BUILD_CMD $BUILD_ARGS $TAGS -f Dockerfile.dev .
+    
+    echo "✅ Development image built successfully"
+    echo "   Tagged as: ${REGISTRY}/${GITHUB_REPO}:dev"
+    ;;
+    
+  test)
+    TAGS="-t ${REGISTRY}/${GITHUB_REPO}:test"
+    $BUILD_CMD $BUILD_ARGS $TAGS -f Dockerfile.test .
+    
+    echo "✅ Test image built successfully"
+    echo "   Tagged as: ${REGISTRY}/${GITHUB_REPO}:test"
+    ;;
+    
+  *)
+    echo "❌ Unknown environment: $ENVIRONMENT"
+    echo "   Valid options: production, development, test"
+    exit 1
+    ;;
+esac
+
+if [ "$PUSH" = true ]; then
+  echo ""
+  echo "✅ Images pushed to registry successfully!"
+  echo ""
+  echo "📦 Pull the image with:"
+  case "$ENVIRONMENT" in
+    production)
+      echo "   docker pull ${REGISTRY}/${GITHUB_REPO}:latest"
+      ;;
+    development|dev)
+      echo "   docker pull ${REGISTRY}/${GITHUB_REPO}:dev"
+      ;;
+    test)
+      echo "   docker pull ${REGISTRY}/${GITHUB_REPO}:test"
+      ;;
+  esac
+fi
+
+echo ""
+echo "🎉 Build complete!"
