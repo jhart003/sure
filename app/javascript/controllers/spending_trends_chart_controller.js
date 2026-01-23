@@ -7,6 +7,10 @@ export default class extends Controller {
     data: Array, // Array of {month, expenses, income}
   };
 
+  // Constants for x-axis label display
+  static DAILY_DATA_THRESHOLD = 12; // More than this means daily data
+  static MIDDLE_DAY_INDEX = 14; // 15th day (0-indexed)
+
   _d3SvgMemo = null;
   _d3GroupMemo = null;
   _d3Tooltip = null;
@@ -167,8 +171,8 @@ export default class extends Controller {
       .tickFormat((d, i) => {
         // For daily data (when we have more than 12 data points, likely daily),
         // only show labels for first, 15th, and last day
-        if (this.dataValue.length > 12) {
-          if (i === 0 || i === 14 || i === this.dataValue.length - 1) {
+        if (this.dataValue.length > this.constructor.DAILY_DATA_THRESHOLD) {
+          if (i === 0 || i === this.constructor.MIDDLE_DAY_INDEX || i === this.dataValue.length - 1) {
             return this.dataValue[i]?.month || "";
           }
           return "";
