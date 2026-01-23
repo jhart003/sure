@@ -33,12 +33,15 @@ RUN apt-get update -qq \
     wget \
   && rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
-# Install Chrome for system tests
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
-  && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
-  && apt-get update -qq \
-  && apt-get -y install --no-install-recommends google-chrome-stable \
-  && rm -rf /var/lib/apt/lists /var/cache/apt/archives
+# Install Chrome for system tests (amd64 only - Chrome not available for arm64)
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt,sharing=locked \
+  if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
+    wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
+    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
+    && apt-get update -qq \
+    && apt-get -y install --no-install-recommends google-chrome-stable; \
+  fi
 
 # Install Node.js
 ARG NODE_VERSION
