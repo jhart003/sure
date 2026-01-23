@@ -43,6 +43,34 @@ Join us!
 
 Sure is a fully working personal finance app that can be [self hosted with Docker](docs/hosting/docker.md).
 
+### Docker Deployment Options
+
+**Production Deployment:**
+- [Self-Hosting Guide](docs/hosting/docker.md) - Complete guide for production deployment
+- [Comprehensive Docker Guide](docs/hosting/DOCKER_DEPLOYMENT.md) - In-depth Docker documentation
+
+**Development with Docker:**
+```sh
+# Start development environment
+docker compose -f docker-compose.dev.yml up
+
+# Access the app at http://localhost:3000
+```
+
+**Quick Start Commands:**
+```sh
+# Build production image
+./bin/docker-build production
+
+# Build and push to GitHub Container Registry
+./bin/docker-push production
+
+# Run tests in Docker
+./bin/docker-test
+```
+
+See the [Docker Deployment Guide](docs/hosting/DOCKER_DEPLOYMENT.md) for complete documentation.
+
 ## Forking and Attribution
 
 This repo is a community fork of the archived Maybe Finance repo.
@@ -90,6 +118,7 @@ For further instructions, see guides below.
 - [Mac dev setup](https://github.com/we-promise/sure/wiki/Mac-Dev-Setup-Guide)
 - [Linux dev setup](https://github.com/we-promise/sure/wiki/Linux-Dev-Setup-Guide)
 - [Windows dev setup](https://github.com/we-promise/sure/wiki/Windows-Dev-Setup-Guide)
+- [Docker development](docs/hosting/DOCKER_DEPLOYMENT.md#development-workflow) - Develop with Docker
 - Dev containers - visit [this guide](https://code.visualstudio.com/docs/devcontainers/containers)
 
 ### One-click

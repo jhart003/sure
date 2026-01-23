@@ -1,0 +1,107 @@
+#!/bin/bash
+# ===========================================================================
+# Docker Database Management Script
+# ===========================================================================
+# This script provides utilities for database operations in Docker
+#
+# Usage:
+#   ./bin/docker-db [command]
+#
+# Commands:
+#   backup  - Create a database backup
+#   restore - Restore from a backup file
+#   reset   - Drop and recreate the database
+#   console - Open PostgreSQL console
+#
+# Examples:
+#   ./bin/docker-db backup
+#   ./bin/docker-db restore backups/sure_20240101.sql
+#   ./bin/docker-db reset
+#   ./bin/docker-db console
+# ===========================================================================
+
+set -e
+
+COMPOSE_FILE="${COMPOSE_FILE:-compose.yml}"
+BACKUP_DIR="./backups"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
+# Ensure backup directory exists
+mkdir -p "$BACKUP_DIR"
+
+case "$1" in
+  backup)
+    echo "📦 Creating database backup..."
+    docker compose -f "$COMPOSE_FILE" exec -T db pg_dump \
+      -U "${POSTGRES_USER:-sure_user}" \
+      -d "${POSTGRES_DB:-sure_production}" \
+      > "$BACKUP_DIR/sure_${TIMESTAMP}.sql"
+    echo "✅ Backup created: $BACKUP_DIR/sure_${TIMESTAMP}.sql"
+    ;;
+    
+  restore)
+    if [ -z "$2" ]; then
+      echo "❌ Please specify a backup file to restore"
+      echo "   Usage: ./bin/docker-db restore <backup_file>"
+      exit 1
+    fi
+    
+    if [ ! -f "$2" ]; then
+      echo "❌ Backup file not found: $2"
+      exit 1
+    fi
+    
+    echo "⚠️  WARNING: This will replace your current database!"
+    echo "   Press Ctrl+C to cancel, or Enter to continue..."
+    read
+    
+    echo "🔄 Restoring database from $2..."
+    docker compose -f "$COMPOSE_FILE" exec -T db psql \
+      -U "${POSTGRES_USER:-sure_user}" \
+      -d "${POSTGRES_DB:-sure_production}" \
+      < "$2"
+    echo "✅ Database restored successfully"
+    ;;
+    
+  reset)
+    echo "⚠️  WARNING: This will DELETE all data in your database!"
+    echo "   Press Ctrl+C to cancel, or Enter to continue..."
+    read
+    
+    echo "🔄 Resetting database..."
+    docker compose -f "$COMPOSE_FILE" exec web bin/rails db:drop db:create db:migrate
+    echo "✅ Database reset complete"
+    ;;
+    
+  console|psql)
+    echo "🔧 Opening PostgreSQL console..."
+    docker compose -f "$COMPOSE_FILE" exec db psql \
+      -U "${POSTGRES_USER:-sure_user}" \
+      -d "${POSTGRES_DB:-sure_production}"
+    ;;
+    
+  migrate)
+    echo "🔄 Running database migrations..."
+    docker compose -f "$COMPOSE_FILE" exec web bin/rails db:migrate
+    echo "✅ Migrations complete"
+    ;;
+    
+  seed)
+    echo "🌱 Seeding database..."
+    docker compose -f "$COMPOSE_FILE" exec web bin/rails db:seed
+    echo "✅ Database seeded"
+    ;;
+    
+  *)
+    echo "❌ Unknown command: $1"
+    echo ""
+    echo "Available commands:"
+    echo "  backup  - Create a database backup"
+    echo "  restore - Restore from a backup file"
+    echo "  reset   - Drop and recreate the database"
+    echo "  console - Open PostgreSQL console"
+    echo "  migrate - Run database migrations"
+    echo "  seed    - Seed the database"
+    exit 1
+    ;;
+esac

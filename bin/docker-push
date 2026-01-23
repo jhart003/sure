@@ -1,0 +1,98 @@
+#!/bin/bash
+# ===========================================================================
+# GitHub Container Registry Push Script
+# ===========================================================================
+# This script authenticates with GHCR and pushes Docker images
+#
+# Usage:
+#   ./bin/docker-push [environment] [--tag=TAG]
+#
+# Prerequisites:
+#   - Docker logged in to GHCR (use: docker login ghcr.io)
+#   - Or set GITHUB_TOKEN environment variable
+#
+# Examples:
+#   ./bin/docker-push production
+#   ./bin/docker-push production --tag=v1.0.0
+#   GITHUB_TOKEN=$TOKEN ./bin/docker-push production
+# ===========================================================================
+
+set -e
+
+ENVIRONMENT="${1:-production}"
+REGISTRY="ghcr.io"
+ADDITIONAL_TAG=""
+
+# Parse arguments
+for arg in "$@"; do
+  case $arg in
+    --tag=*)
+      ADDITIONAL_TAG="${arg#*=}"
+      ;;
+    --registry=*)
+      REGISTRY="${arg#*=}"
+      ;;
+  esac
+done
+
+# Determine repository name
+GITHUB_REPO=$(git config --get remote.origin.url 2>/dev/null | sed -E 's#.*github\.com[/:]([^/]+/[^/]+)(\.git)?$#\1#' || echo "")
+
+if [ -z "$GITHUB_REPO" ]; then
+  echo "❌ Could not determine GitHub repository"
+  echo "   Make sure you're in a git repository with a GitHub remote"
+  exit 1
+fi
+
+echo "📦 Pushing to GitHub Container Registry"
+echo "🏷️  Repository: $GITHUB_REPO"
+echo "🌍 Registry: $REGISTRY"
+
+# Login to GHCR if GITHUB_TOKEN is set
+if [ -n "$GITHUB_TOKEN" ]; then
+  echo "🔐 Logging in to GHCR with GITHUB_TOKEN..."
+  echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_USERNAME" --password-stdin
+fi
+
+# Check if already logged in
+if ! docker info 2>/dev/null | grep -q "ghcr.io"; then
+  echo "⚠️  Not logged in to GHCR. Attempting login..."
+  echo "   Run: docker login ghcr.io"
+  echo "   Or set GITHUB_TOKEN environment variable"
+  
+  # Try to login interactively
+  docker login ghcr.io || {
+    echo "❌ Failed to login to GHCR"
+    exit 1
+  }
+fi
+
+# Build and push using the docker-build script
+if [ -n "$ADDITIONAL_TAG" ]; then
+  ./bin/docker-build "$ENVIRONMENT" --push --registry="$REGISTRY" --tag="$ADDITIONAL_TAG"
+else
+  ./bin/docker-build "$ENVIRONMENT" --push --registry="$REGISTRY"
+fi
+
+echo ""
+echo "✅ Successfully pushed to GHCR!"
+echo ""
+echo "📦 Image URL:"
+case "$ENVIRONMENT" in
+  production)
+    echo "   ${REGISTRY}/${GITHUB_REPO}:latest"
+    if [ -n "$ADDITIONAL_TAG" ]; then
+      echo "   ${REGISTRY}/${GITHUB_REPO}:${ADDITIONAL_TAG}"
+    fi
+    ;;
+  development|dev)
+    echo "   ${REGISTRY}/${GITHUB_REPO}:dev"
+    ;;
+  test)
+    echo "   ${REGISTRY}/${GITHUB_REPO}:test"
+    ;;
+esac
+
+echo ""
+echo "🔗 View on GitHub:"
+echo "   https://github.com/${GITHUB_REPO}/pkgs/container/$(basename $GITHUB_REPO)"

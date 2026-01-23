@@ -1,0 +1,67 @@
+# syntax = docker/dockerfile:1
+
+# =============================================================================
+# Development Dockerfile - optimized for local development
+# =============================================================================
+# This Dockerfile is designed for development with:
+# - All development dependencies installed
+# - Hot-reloading support
+# - Debugging tools
+# - No precompiled assets (compiled on-demand)
+# =============================================================================
+
+ARG RUBY_VERSION=3.4.7
+ARG NODE_VERSION=20
+
+FROM registry.docker.com/library/ruby:$RUBY_VERSION-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+WORKDIR /rails
+
+# Install development and runtime packages
+# Development tools: git, vim, build tools
+# Runtime: postgresql-client, imagemagick, libvips
+# Debugging: gdb, strace
+RUN apt-get update -qq \
+  && apt-get -y install --no-install-recommends \
+    apt-utils \
+    build-essential \
+    curl \
+    git \
+    imagemagick \
+    iproute2 \
+    libpq-dev \
+    libvips \
+    libyaml-dev \
+    libyaml-0-2 \
+    openssh-client \
+    postgresql-client \
+    vim \
+    procps \
+    gdb \
+    strace \
+  && rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Install Node.js
+ARG NODE_VERSION
+RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
+  && apt-get install -y nodejs \
+  && rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Install bundler and foreman
+RUN gem install bundler foreman
+
+# Set development environment
+ENV RAILS_ENV=development \
+    BUNDLE_PATH=/bundle \
+    LANG=C.UTF-8
+
+# Create bundle cache directory
+RUN mkdir -p /bundle && chmod 777 /bundle
+
+# Expose port 3000
+EXPOSE 3000
+
+# Default command
+CMD ["bin/dev"]

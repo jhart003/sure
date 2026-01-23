@@ -1,0 +1,76 @@
+# syntax = docker/dockerfile:1
+
+# =============================================================================
+# Test Dockerfile - optimized for running tests in CI/CD
+# =============================================================================
+# This Dockerfile is designed for running tests with:
+# - Test dependencies installed
+# - Chrome/Chromedriver for system tests
+# - Optimized for CI/CD environments
+# =============================================================================
+
+ARG RUBY_VERSION=3.4.7
+ARG NODE_VERSION=20
+
+FROM registry.docker.com/library/ruby:$RUBY_VERSION-slim
+
+WORKDIR /rails
+
+# Install test dependencies including Chrome for system tests
+RUN apt-get update -qq \
+  && apt-get -y install --no-install-recommends \
+    build-essential \
+    curl \
+    git \
+    gnupg \
+    imagemagick \
+    libpq-dev \
+    libvips \
+    libyaml-dev \
+    libyaml-0-2 \
+    postgresql-client \
+    procps \
+    wget \
+  && rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Install Chrome for system tests
+RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+  && echo "deb http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google.list \
+  && apt-get update -qq \
+  && apt-get -y install --no-install-recommends google-chrome-stable \
+  && rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Install Node.js
+ARG NODE_VERSION
+RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
+  && apt-get install -y nodejs \
+  && rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Install bundler
+RUN gem install bundler
+
+# Set test environment
+ENV RAILS_ENV=test \
+    BUNDLE_PATH=/usr/local/bundle \
+    NODE_ENV=test \
+    LANG=C.UTF-8
+
+# Install dependencies
+COPY .ruby-version Gemfile Gemfile.lock ./
+RUN bundle install
+
+# Install JavaScript dependencies
+COPY package.json package-lock.json* ./
+RUN if [ -f "package-lock.json" ]; then npm ci; \
+    elif [ -f "package.json" ]; then npm install; \
+    fi
+
+# Copy application code
+COPY . .
+
+# Precompile bootsnap for faster test runs
+RUN bundle exec bootsnap precompile --gemfile -j 0 && \
+    bundle exec bootsnap precompile -j 0 app/ lib/
+
+# Default command runs the test suite
+CMD ["bin/rails", "test"]

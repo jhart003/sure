@@ -1,0 +1,149 @@
+# ===========================================================================
+# Development Docker Compose Configuration
+# ===========================================================================
+#
+# Purpose:
+# --------
+# This file provides a complete development environment using Docker Compose.
+# It includes hot-reloading, debugging support, and all necessary services.
+#
+# Usage:
+# ------
+# Start the development environment:
+#   docker compose -f docker-compose.dev.yml up
+#
+# Run commands in the container:
+#   docker compose -f docker-compose.dev.yml exec web bash
+#   docker compose -f docker-compose.dev.yml exec web bin/rails console
+#
+# Run tests:
+#   docker compose -f docker-compose.dev.yml exec web bin/rails test
+#
+# ===========================================================================
+
+x-db-env: &db_env
+  POSTGRES_USER: ${POSTGRES_USER:-postgres}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+  POSTGRES_DB: ${POSTGRES_DB:-sure_development}
+
+x-rails-env: &rails_env
+  <<: *db_env
+  RAILS_ENV: development
+  NODE_ENV: development
+  DB_HOST: db
+  DB_PORT: 5432
+  REDIS_URL: redis://redis:6379/1
+  BUNDLE_PATH: /bundle
+  SECRET_KEY_BASE: ${SECRET_KEY_BASE:-development_secret_key_base_min_30_chars_long_for_local_dev}
+  RAILS_MAX_THREADS: 5
+  WEB_CONCURRENCY: 1
+  # Enable development features
+  RAILS_DEVELOPMENT_HOSTS: .githubpreview.dev
+  # Disable SSL in development
+  RAILS_FORCE_SSL: "false"
+  RAILS_ASSUME_SSL: "false"
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        RUBY_VERSION: 3.4.7
+        NODE_VERSION: 20
+    command: bin/dev
+    volumes:
+      # Mount source code for hot-reloading
+      - .:/rails:cached
+      # Mount bundle cache to speed up gem installation
+      - bundle_cache:/bundle
+      # Ignore certain directories
+      - /rails/tmp
+      - /rails/log
+      - /rails/node_modules
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      <<: *rails_env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    stdin_open: true
+    tty: true
+    networks:
+      - sure_dev_net
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        RUBY_VERSION: 3.4.7
+        NODE_VERSION: 20
+    command: bundle exec sidekiq
+    volumes:
+      - .:/rails:cached
+      - bundle_cache:/bundle
+      - /rails/tmp
+      - /rails/log
+    environment:
+      <<: *rails_env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sure_dev_net
+
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    environment:
+      <<: *db_env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sure_dev_net
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_dev_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sure_dev_net
+
+  # Optional: Mailcatcher for email testing in development
+  mailcatcher:
+    image: dockage/mailcatcher:latest
+    ports:
+      - "1080:1080"  # Web interface
+      - "1025:1025"  # SMTP
+    networks:
+      - sure_dev_net
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
+  bundle_cache:
+
+networks:
+  sure_dev_net:
+    driver: bridge

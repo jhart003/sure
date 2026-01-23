@@ -1,45 +1,98 @@
 # See https://docs.docker.com/engine/reference/builder/#dockerignore-file for more about ignoring files.
 
-# Ignore git directory.
+# Git directory and version control
 /.git/
 /.gitignore
+/.gitattributes
 
-# Ignore bundler config.
+# CI/CD files
+/.github/
+/.circleci/
+/.gitlab-ci.yml
+/.travis.yml
+
+# Documentation (not needed in production)
+/docs/
+/*.md
+!README.md
+
+# Bundler config
 /.bundle
 
-# Ignore all environment files (except templates).
+# Environment files (except templates)
 /.env*
 !/.env*.erb
+!/.env*.example
 
-# Ignore all default key files.
+# Credentials and secrets
 /config/master.key
 /config/credentials/*.key
 
-# Ignore all logfiles and tempfiles.
+# Logs and temporary files
 /log/*
 /tmp/*
 !/log/.keep
 !/tmp/.keep
 
-# Ignore pidfiles, but keep the directory.
+# Pidfiles
 /tmp/pids/*
 !/tmp/pids/.keep
 
-# Ignore storage (uploaded files in development and any SQLite databases).
+# Storage (uploaded files in development and any SQLite databases)
 /storage/*
 !/storage/.keep
 /tmp/storage/*
 !/tmp/storage/.keep
 
-# Ignore assets.
+# Assets (will be compiled during build)
 /node_modules/
 /app/assets/builds/*
 !/app/assets/builds/.keep
 /public/assets
 
-# Ignore CI service files.
-/.github
+# Editor and IDE files
+/.vscode/
+/.idea/
+*.swp
+*.swo
+*~
+.DS_Store
 
-# Ignore Docker-related files
+# Test files and coverage
+/test/
+/spec/
+/coverage/
+/.rspec
+
+# Development tools
+/.devcontainer/
+/.cursor/
+/.junie/
+/.gemini/
+
+# Docker files (prevent recursion)
 /.dockerignore
 /Dockerfile*
+/docker-compose*.yml
+/compose*.yml
+
+# Backup files
+/backups/
+*.dump
+*.sql
+
+# Mobile app (separate deployment)
+/mobile/
+
+# Build artifacts
+*.gem
+*.rbc
+*.class
+*.log
+
+# Package manager files
+package-lock.json
+yarn.lock
+
+# Local development files
+/vendor/bundle/
