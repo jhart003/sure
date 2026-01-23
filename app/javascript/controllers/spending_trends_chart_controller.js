@@ -243,7 +243,7 @@ export default class extends Controller {
 
         // Find closest data point
         let closestIndex = 0;
-        let minDistance = Infinity;
+        let minDistance = Number.POSITIVE_INFINITY;
 
         this.dataValue.forEach((d, i) => {
           const dataX =
@@ -332,10 +332,11 @@ export default class extends Controller {
     const absValue = Math.abs(value);
     if (absValue >= 1000000) {
       return `$${(value / 1000000).toFixed(1)}M`;
-    } else if (absValue >= 1000) {
+    }
+    if (absValue >= 1000) {
       return `$${(value / 1000).toFixed(1)}K`;
     }
-    return `$${value.toFixed(0)}`;
+    return `$${Math.round(value)}`;
   }
 
   _createMainSvg() {
