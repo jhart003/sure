@@ -51,7 +51,7 @@ services:
   # Background job processor
   worker:
     image: ghcr.io/jhart003/sure:latest
-    command: bundle exec sidekiq
+    command: bundle exec sidekiq -c 5
     environment:
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-password}@db:5432/sure_production
       REDIS_URL: redis://redis:6379/0
