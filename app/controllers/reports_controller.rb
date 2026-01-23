@@ -309,10 +309,49 @@ class ReportsController < ApplicationController
     end
 
     def build_trends_data
-      # Generate month-by-month data based on the current period filter
-      trends = []
+      # For monthly period type within a single month, show daily cumulative spending
+      if @period_type == :monthly && @start_date.beginning_of_month == @end_date.beginning_of_month
+        build_daily_cumulative_trends
+      else
+        # Generate month-by-month data based on the current period filter
+        build_monthly_trends
+      end
+    end
 
-      # Generate list of months within the period
+    def build_daily_cumulative_trends
+      # Note: This makes 2*N database queries where N is the number of days in the month.
+      # For a typical month (30-31 days), this is 60-62 queries.
+      # This is acceptable because:
+      # 1. Only triggered for single-month views (not a frequent operation)
+      # 2. Reuses income_statement logic which handles complex categorization rules
+      # 3. Alternative of duplicating income_statement logic in a single query is error-prone
+
+      trends = []
+      current_date = @start_date
+
+      while current_date <= @end_date
+        # Get cumulative totals from start of month to current day
+        period = Period.custom(start_date: @start_date, end_date: current_date)
+
+        daily_income = Current.family.income_statement.income_totals(period: period).total
+        daily_expenses = Current.family.income_statement.expense_totals(period: period).total
+
+        trends << {
+          month: current_date.strftime("%b %-d"),
+          is_current_month: (current_date == Date.current),
+          income: daily_income,
+          expenses: daily_expenses,
+          net: daily_income - daily_expenses
+        }
+
+        current_date = current_date.next_day
+      end
+
+      trends
+    end
+
+    def build_monthly_trends
+      trends = []
       current_month = @start_date.beginning_of_month
       end_of_period = @end_date.end_of_month
 

@@ -166,6 +166,11 @@ export default class extends Controller {
       return color;
     }
 
+    // If opacity is 1.0, return the original color to preserve exact color values
+    if (this.segmentOpacityValue === 1.0) {
+      return color;
+    }
+
     const reducedOpacityColor = d3.color(color);
     reducedOpacityColor.opacity = this.segmentOpacityValue;
     return reducedOpacityColor;
