@@ -114,7 +114,7 @@ export default class extends Controller {
     return `link-gradient-${link.source.index}-${link.target.index}-${index}`;
   }
 
-  #colorWithOpacity(nodeColor, opacity = 0.1) {
+  #colorWithOpacity(nodeColor, opacity = 0.35) {
     const defaultColor = this.constructor.DEFAULT_COLOR;
     let colorStr = nodeColor || defaultColor;
 
