@@ -85,4 +85,56 @@ class BudgetTest < ActiveSupport::TestCase
 
     assert_not_nil budget.previous_budget_param
   end
+
+  test "spending_variance calculates correctly" do
+    budget = Budget.create!(
+      family: @family,
+      start_date: Date.current.beginning_of_month,
+      end_date: Date.current.end_of_month,
+      currency: "USD",
+      budgeted_spending: 1000
+    )
+
+    # Variance should be budgeted - actual (1000 - 0 = 1000)
+    assert_equal 1000, budget.spending_variance
+  end
+
+  test "spending_variance_percent calculates correctly" do
+    budget = Budget.create!(
+      family: @family,
+      start_date: Date.current.beginning_of_month,
+      end_date: Date.current.end_of_month,
+      currency: "USD",
+      budgeted_spending: 1000
+    )
+
+    # With no spending, variance percent should be 100%
+    assert_equal 100.0, budget.spending_variance_percent
+  end
+
+  test "income_variance calculates correctly" do
+    budget = Budget.create!(
+      family: @family,
+      start_date: Date.current.beginning_of_month,
+      end_date: Date.current.end_of_month,
+      currency: "USD",
+      expected_income: 2000
+    )
+
+    # Variance should be actual - expected (0 - 2000 = -2000)
+    assert_equal(-2000, budget.income_variance)
+  end
+
+  test "income_variance_percent calculates correctly" do
+    budget = Budget.create!(
+      family: @family,
+      start_date: Date.current.beginning_of_month,
+      end_date: Date.current.end_of_month,
+      currency: "USD",
+      expected_income: 2000
+    )
+
+    # With no income, variance percent should be -100%
+    assert_equal(-100.0, budget.income_variance_percent)
+  end
 end
