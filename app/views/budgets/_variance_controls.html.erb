@@ -1,0 +1,61 @@
+<%# locals: (budget:, selected_period:, selected_start:) %>
+
+<div data-controller="budget-variance" class="mb-6">
+  <div class="bg-container rounded-xl shadow-border-xs p-4">
+    <div class="flex flex-wrap items-center gap-4">
+      <div class="flex items-center gap-2">
+        <label class="text-sm text-secondary" for="variance-period"><%= t("budgets.variance.period_type") %>:</label>
+        <select 
+          id="variance-period"
+          data-budget-variance-target="periodType"
+          data-action="change->budget-variance#updateVariance"
+          class="px-3 py-2 border border-secondary rounded-lg text-sm text-primary bg-container focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-inverse"
+        >
+          <option value="month" <%= "selected" if selected_period == "month" %>><%= t("budgets.variance.periods.month") %></option>
+          <option value="quarter" <%= "selected" if selected_period == "quarter" %>><%= t("budgets.variance.periods.quarter") %></option>
+          <option value="year" <%= "selected" if selected_period == "year" %>><%= t("budgets.variance.periods.year") %></option>
+        </select>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <label class="text-sm text-secondary" for="variance-start"><%= t("budgets.variance.starting_month") %>:</label>
+        <select 
+          id="variance-start"
+          data-budget-variance-target="startMonth"
+          data-action="change->budget-variance#updateVariance"
+          class="px-3 py-2 border border-secondary rounded-lg text-sm text-primary bg-container focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-inverse"
+        >
+          <% available_months(budget).each do |month_date| %>
+            <option value="<%= month_date.to_s %>" <%= "selected" if month_date == selected_start %>>
+              <%= month_date.strftime("%B %Y") %>
+            </option>
+          <% end %>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div id="variance-content" data-budget-variance-target="varianceContent" class="mt-4">
+    <%= turbo_frame_tag "budget_variance" do %>
+      <!-- Variance component will be rendered here -->
+    <% end %>
+  </div>
+</div>
+
+<%
+  def available_months(budget)
+    # Get available months for variance selection
+    # Go back up to 2 years or to the oldest budget date
+    oldest_date = [ 2.years.ago.beginning_of_month, budget.family.oldest_entry_date&.beginning_of_month || 2.years.ago.beginning_of_month ].min
+    current_month = Date.current.beginning_of_month
+    
+    months = []
+    date = oldest_date
+    while date <= current_month
+      months << date
+      date = date.next_month.beginning_of_month
+    end
+    
+    months.reverse
+  end
+%>
