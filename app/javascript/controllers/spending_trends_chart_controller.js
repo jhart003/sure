@@ -172,7 +172,8 @@ export default class extends Controller {
         // For daily data (when we have more than 12 data points, likely daily),
         // only show labels for first, 15th, and last day
         if (this.dataValue.length > this.constructor.DAILY_DATA_THRESHOLD) {
-          if (i === 0 || i === this.constructor.MIDDLE_DAY_INDEX || i === this.dataValue.length - 1) {
+          const middleIndex = Math.min(this.constructor.MIDDLE_DAY_INDEX, this.dataValue.length - 2);
+          if (i === 0 || i === middleIndex || i === this.dataValue.length - 1) {
             return this.dataValue[i]?.month || "";
           }
           return "";
