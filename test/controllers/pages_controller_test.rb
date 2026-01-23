@@ -27,6 +27,33 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-controller='sankey-chart']"
   end
 
+  test "dashboard renders outflows donut chart with colors for each category" do
+    # Create multiple categories with different colors
+    food_category = @family.categories.create!(name: "Food", classification: "expense", color: "#FF5733")
+    transport_category = @family.categories.create!(name: "Transport", classification: "expense", color: "#33FF57")
+    entertainment_category = @family.categories.create!(name: "Entertainment", classification: "expense", color: "#3357FF")
+
+    # Create transactions for each category
+    create_transaction(account: @family.accounts.first, name: "Restaurant", amount: 100, category: food_category)
+    create_transaction(account: @family.accounts.first, name: "Uber", amount: 50, category: transport_category)
+    create_transaction(account: @family.accounts.first, name: "Movie", amount: 30, category: entertainment_category)
+
+    get root_path
+    assert_response :ok
+    
+    # Verify the outflows donut chart controller is present
+    assert_select "[data-controller='outflows-donut-chart']"
+    
+    # Verify that the data includes all three categories with their colors
+    response_body = @response.body
+    assert_match /Food/, response_body
+    assert_match /Transport/, response_body
+    assert_match /Entertainment/, response_body
+    assert_match /#FF5733/, response_body # Food color
+    assert_match /#33FF57/, response_body # Transport color
+    assert_match /#3357FF/, response_body # Entertainment color
+  end
+
   test "changelog" do
     VCR.use_cassette("git_repository_provider/fetch_latest_release_notes") do
       get changelog_path
