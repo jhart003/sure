@@ -164,7 +164,18 @@ export default class extends Controller {
     // X-axis
     const xAxis = d3
       .axisBottom(this._d3XScale)
-      .tickFormat((d, i) => this.dataValue[i]?.month || "")
+      .tickFormat((d, i) => {
+        // For daily data (when we have more than 12 data points, likely daily),
+        // only show labels for first, 15th, and last day
+        if (this.dataValue.length > 12) {
+          if (i === 0 || i === 14 || i === this.dataValue.length - 1) {
+            return this.dataValue[i]?.month || "";
+          }
+          return "";
+        }
+        // For monthly data, show all labels
+        return this.dataValue[i]?.month || "";
+      })
       .tickSize(0)
       .tickPadding(10);
 
