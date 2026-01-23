@@ -1,0 +1,77 @@
+<div class="space-y-4">
+  <%# Variance Summary Header %>
+  <div class="bg-container rounded-xl shadow-border-xs p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-medium text-primary"><%= t("budgets.variance.title") %></h3>
+      <span class="text-sm text-secondary"><%= period_label %></span>
+    </div>
+
+    <%# Total Budget vs Actual %>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div>
+        <p class="text-sm text-secondary mb-1"><%= t("budgets.variance.budgeted") %></p>
+        <p class="text-xl font-medium text-primary">
+          <%= Money.new(variance_data[:total_budgeted], currency).format %>
+        </p>
+      </div>
+      <div>
+        <p class="text-sm text-secondary mb-1"><%= t("budgets.variance.actual") %></p>
+        <p class="text-xl font-medium text-primary">
+          <%= Money.new(variance_data[:total_actual], currency).format %>
+        </p>
+      </div>
+      <div>
+        <p class="text-sm text-secondary mb-1"><%= t("budgets.variance.variance") %></p>
+        <p class="text-xl font-medium <%= variance_color_class %>">
+          <%= Money.new(variance_data[:total_variance].abs, currency).format %>
+          <span class="text-sm">
+            (<%= number_to_percentage(variance_data[:total_variance_percent].abs, precision: 1) %>
+            <%= variance_data[:total_variance] >= 0 ? t("budgets.variance.under") : t("budgets.variance.over") %>)
+          </span>
+        </p>
+      </div>
+    </div>
+
+    <%# Progress Bar %>
+    <div>
+      <div class="flex h-2 mb-2 gap-1 rounded-md overflow-hidden">
+        <div class="<%= variance_bg_class %>" style="width: <%= variance_percent_width %>%"></div>
+        <div class="bg-surface-inset" style="width: <%= 100 - variance_percent_width %>%"></div>
+      </div>
+      <div class="flex justify-between text-xs text-secondary">
+        <span><%= number_to_percentage(variance_percent_width, precision: 1) %> <%= t("budgets.variance.spent") %></span>
+        <% if variance_remaining_percent > 0 %>
+          <span><%= number_to_percentage(variance_remaining_percent, precision: 1) %> <%= t("budgets.variance.remaining") %></span>
+        <% else %>
+          <span class="text-destructive"><%= t("budgets.variance.over_budget") %></span>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# Category Breakdown %>
+  <% if variance_data[:category_variances].any? %>
+    <div class="bg-container rounded-xl shadow-border-xs p-6">
+      <h4 class="text-base font-medium text-primary mb-4"><%= t("budgets.variance.category_breakdown") %></h4>
+      
+      <div class="space-y-3">
+        <% variance_data[:category_variances].take(10).each do |cv| %>
+          <div class="flex items-center justify-between py-2 border-b border-secondary last:border-0">
+            <div class="flex items-center gap-2 flex-1">
+              <div class="w-3 h-3 rounded-full" style="background-color: <%= cv[:category].color %>"></div>
+              <span class="text-sm text-primary"><%= cv[:category].name %></span>
+            </div>
+            <div class="flex items-center gap-4 text-sm">
+              <span class="text-secondary">
+                <%= Money.new(cv[:actual], currency).format %> / <%= Money.new(cv[:budgeted], currency).format %>
+              </span>
+              <span class="font-medium <%= cv[:over_budget] ? 'text-destructive' : 'text-green-500' %> w-24 text-right">
+                <%= cv[:over_budget] ? "-" : "+" %><%= Money.new(cv[:variance].abs, currency).format %>
+              </span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

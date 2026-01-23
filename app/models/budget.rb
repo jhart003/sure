@@ -234,6 +234,29 @@ class Budget < ApplicationRecord
     remaining_expected_income.abs / expected_income.to_f * 100
   end
 
+  # =============================================================================
+  # Variance: Difference between budgeted and actual spending
+  # =============================================================================
+  def spending_variance
+    (budgeted_spending || 0) - actual_spending
+  end
+
+  def spending_variance_percent
+    return 0 unless budgeted_spending && budgeted_spending > 0
+
+    (spending_variance / budgeted_spending.to_f) * 100
+  end
+
+  def income_variance
+    actual_income - (expected_income || 0)
+  end
+
+  def income_variance_percent
+    return 0 unless expected_income && expected_income > 0
+
+    (income_variance / expected_income.to_f) * 100
+  end
+
   private
     def income_statement
       @income_statement ||= family.income_statement

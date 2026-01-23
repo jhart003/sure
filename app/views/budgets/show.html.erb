@@ -63,5 +63,22 @@
         <%= render "budgets/budget_categories", budget: @budget %>
       </div>
     </div>
+
+    <%# Variance Analysis Section %>
+    <% if @budget.initialized? %>
+      <div class="w-full">
+        <%= render "budgets/variance_controls", 
+                   budget: @budget, 
+                   selected_period: @variance_period_type,
+                   selected_start: @variance_start_date %>
+        
+        <%= turbo_frame_tag "budget_variance" do %>
+          <%= render Budget::VarianceComponent.new(
+            variance_data: @variance_data,
+            currency: @budget.currency
+          ) %>
+        <% end %>
+      </div>
+    <% end %>
   </div>
 </div>

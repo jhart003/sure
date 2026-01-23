@@ -1,0 +1,24 @@
+---
+en:
+  budgets:
+    show:
+      tabs:
+        actual: Actual
+        budgeted: Budgeted
+    variance:
+      title: Budget Variance Analysis
+      budgeted: Budgeted
+      actual: Actual Spent
+      variance: Variance
+      under: under budget
+      over: over budget
+      over_budget: Over Budget
+      spent: spent
+      remaining: remaining
+      category_breakdown: Category Breakdown
+      period_type: View variance for
+      starting_month: Starting month
+      periods:
+        month: Month
+        quarter: Quarter
+        year: Year
