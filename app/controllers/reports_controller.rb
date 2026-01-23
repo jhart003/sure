@@ -321,11 +321,9 @@ class ReportsController < ApplicationController
     def build_daily_cumulative_trends
       trends = []
       current_date = @start_date
-      cumulative_income = 0
-      cumulative_expenses = 0
 
       while current_date <= @end_date
-        # Get transactions for this specific day
+        # Get cumulative totals from start of month to current day
         period = Period.custom(start_date: @start_date, end_date: current_date)
         
         daily_income = Current.family.income_statement.income_totals(period: period).total
