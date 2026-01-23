@@ -79,7 +79,6 @@ export default class extends Controller {
   }
 
   _drawChart() {
-    this._drawBars();
     this._drawAreaGradient();
     this._drawLine();
     this._drawAxes();
@@ -87,29 +86,12 @@ export default class extends Controller {
     this._trackMouseForShowingTooltip();
   }
 
-  _drawBars() {
-    const barWidth = this._d3ContainerWidth / this.dataValue.length;
-    const padding = barWidth * 0.2;
-
-    this._d3Group
-      .selectAll(".bar")
-      .data(this.dataValue)
-      .enter()
-      .append("rect")
-      .attr("class", "bar")
-      .attr("x", (d, i) => i * barWidth + padding / 2)
-      .attr("y", (d) => this._d3YScale(d.expenses))
-      .attr("width", barWidth - padding)
-      .attr(
-        "height",
-        (d) => this._d3ContainerHeight - this._d3YScale(d.expenses),
-      )
-      .attr("fill", "var(--color-warning)")
-      .attr("opacity", 0.2)
-      .attr("rx", 4);
-  }
-
   _drawAreaGradient() {
+    // Handle single data point case - don't draw area
+    if (this.dataValue.length < 2) {
+      return;
+    }
+
     // Define gradient for area fill
     const gradient = this._d3Group
       .append("defs")
@@ -149,6 +131,17 @@ export default class extends Controller {
   }
 
   _drawLine() {
+    // Handle single data point case - draw a dot instead of a line
+    if (this.dataValue.length === 1) {
+      this._d3Group
+        .append("circle")
+        .attr("cx", this._d3ContainerWidth / 2)
+        .attr("cy", this._d3YScale(this.dataValue[0].expenses))
+        .attr("r", 5)
+        .attr("fill", "var(--color-warning)");
+      return;
+    }
+
     const line = d3
       .line()
       .x((d, i) => (i * this._d3ContainerWidth) / (this.dataValue.length - 1))
@@ -227,7 +220,9 @@ export default class extends Controller {
     const bisect = d3.bisector((d, x) => {
       const dataIndex = this.dataValue.indexOf(d);
       const dataX =
-        (dataIndex * this._d3ContainerWidth) / (this.dataValue.length - 1);
+        this.dataValue.length === 1
+          ? this._d3ContainerWidth / 2
+          : (dataIndex * this._d3ContainerWidth) / (this.dataValue.length - 1);
       return dataX - x;
     }).left;
 
@@ -247,7 +242,9 @@ export default class extends Controller {
 
         this.dataValue.forEach((d, i) => {
           const dataX =
-            (i * this._d3ContainerWidth) / (this.dataValue.length - 1);
+            this.dataValue.length === 1
+              ? this._d3ContainerWidth / 2
+              : (i * this._d3ContainerWidth) / (this.dataValue.length - 1);
           const distance = Math.abs(dataX - xPos);
           if (distance < minDistance) {
             minDistance = distance;
@@ -257,7 +254,10 @@ export default class extends Controller {
 
         const d = this.dataValue[closestIndex];
         const dataX =
-          (closestIndex * this._d3ContainerWidth) / (this.dataValue.length - 1);
+          this.dataValue.length === 1
+            ? this._d3ContainerWidth / 2
+            : (closestIndex * this._d3ContainerWidth) /
+              (this.dataValue.length - 1);
 
         // Clear previous circles and guidelines
         this._d3Group.selectAll(".data-point-circle").remove();
