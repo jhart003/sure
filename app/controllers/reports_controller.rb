@@ -309,10 +309,44 @@ class ReportsController < ApplicationController
     end
 
     def build_trends_data
-      # Generate month-by-month data based on the current period filter
-      trends = []
+      # For monthly period type within a single month, show daily cumulative spending
+      if @period_type == :monthly && @start_date.beginning_of_month == @end_date.beginning_of_month
+        build_daily_cumulative_trends
+      else
+        # Generate month-by-month data based on the current period filter
+        build_monthly_trends
+      end
+    end
 
-      # Generate list of months within the period
+    def build_daily_cumulative_trends
+      trends = []
+      current_date = @start_date
+      cumulative_income = 0
+      cumulative_expenses = 0
+
+      while current_date <= @end_date
+        # Get transactions for this specific day
+        period = Period.custom(start_date: @start_date, end_date: current_date)
+        
+        daily_income = Current.family.income_statement.income_totals(period: period).total
+        daily_expenses = Current.family.income_statement.expense_totals(period: period).total
+
+        trends << {
+          month: current_date.strftime("%b %-d"),
+          is_current_month: (current_date == Date.current),
+          income: daily_income,
+          expenses: daily_expenses,
+          net: daily_income - daily_expenses
+        }
+
+        current_date = current_date.next_day
+      end
+
+      trends
+    end
+
+    def build_monthly_trends
+      trends = []
       current_month = @start_date.beginning_of_month
       end_of_period = @end_date.end_of_month
 
