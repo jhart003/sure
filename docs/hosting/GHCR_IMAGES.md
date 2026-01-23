@@ -44,7 +44,26 @@ Built from `Dockerfile.test` for running tests.
 
 ### Quick Start with Docker Compose
 
-Instead of building the image locally, you can use the pre-built image in your `docker-compose.yml`:
+A complete example compose file is available at `compose.example.ghcr.yml`. To use it:
+
+```bash
+# 1. Download the example compose file
+curl -o docker-compose.yml https://raw.githubusercontent.com/jhart003/sure/main/compose.example.ghcr.yml
+
+# 2. Create environment file
+curl -o .env https://raw.githubusercontent.com/jhart003/sure/main/.env.example
+
+# 3. Edit .env and set required values (especially SECRET_KEY_BASE)
+# Generate a secret: openssl rand -hex 64
+nano .env
+
+# 4. Start the application
+docker compose up -d
+
+# 5. Access Sure at http://localhost:3000
+```
+
+Or use the pre-built image in your existing `docker-compose.yml`:
 
 ```yaml
 version: '3.8'
@@ -80,6 +99,8 @@ volumes:
   postgres_data:
   redis_data:
 ```
+
+See `compose.example.ghcr.yml` for a production-ready example with health checks and best practices.
 
 ### Pulling the Latest Image
 
