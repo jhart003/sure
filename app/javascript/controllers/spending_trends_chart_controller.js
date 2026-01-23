@@ -7,6 +7,10 @@ export default class extends Controller {
     data: Array, // Array of {month, expenses, income}
   };
 
+  // Constants for x-axis label display
+  static DAILY_DATA_THRESHOLD = 12; // More than this means daily data
+  static MIDDLE_DAY_INDEX = 14; // 15th day (0-indexed)
+
   _d3SvgMemo = null;
   _d3GroupMemo = null;
   _d3Tooltip = null;
@@ -164,7 +168,20 @@ export default class extends Controller {
     // X-axis
     const xAxis = d3
       .axisBottom(this._d3XScale)
-      .tickFormat((d, i) => this.dataValue[i]?.month || "")
+      .tickFormat((d, i) => {
+        // For daily data (more than 12 data points),
+        // only show labels for first, middle (15th when available), and last day
+        if (this.dataValue.length > this.constructor.DAILY_DATA_THRESHOLD) {
+          // Use 15th day as middle when dataset is large enough, otherwise use a day before the last
+          const middleIndex = Math.min(this.constructor.MIDDLE_DAY_INDEX, this.dataValue.length - 2);
+          if (i === 0 || i === middleIndex || i === this.dataValue.length - 1) {
+            return this.dataValue[i]?.month || "";
+          }
+          return "";
+        }
+        // For monthly data, show all labels
+        return this.dataValue[i]?.month || "";
+      })
       .tickSize(0)
       .tickPadding(10);
 
