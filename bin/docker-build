@@ -63,7 +63,7 @@ NODE_VERSION=20
 
 # Determine repository name
 REPO_NAME=$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
-GITHUB_REPO=$(git config --get remote.origin.url 2>/dev/null | sed 's/.*github.com[:/]\(.*\)\.git/\1/' || echo "$REPO_NAME")
+GITHUB_REPO=$(git config --get remote.origin.url 2>/dev/null | sed -E 's#.*github\.com[/:]([^/]+/[^/]+)(\.git)?$#\1#' || echo "$REPO_NAME")
 
 echo "🐳 Building Docker image for environment: $ENVIRONMENT"
 echo "📦 Ruby version: $RUBY_VERSION"

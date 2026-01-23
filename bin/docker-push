@@ -36,7 +36,7 @@ for arg in "$@"; do
 done
 
 # Determine repository name
-GITHUB_REPO=$(git config --get remote.origin.url 2>/dev/null | sed 's/.*github.com[:/]\(.*\)\.git/\1/' || echo "")
+GITHUB_REPO=$(git config --get remote.origin.url 2>/dev/null | sed -E 's#.*github\.com[/:]([^/]+/[^/]+)(\.git)?$#\1#' || echo "")
 
 if [ -z "$GITHUB_REPO" ]; then
   echo "❌ Could not determine GitHub repository"
