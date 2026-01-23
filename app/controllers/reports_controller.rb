@@ -319,6 +319,13 @@ class ReportsController < ApplicationController
     end
 
     def build_daily_cumulative_trends
+      # Note: This makes 2*N database queries where N is the number of days in the month.
+      # For a typical month (30-31 days), this is 60-62 queries.
+      # This is acceptable because:
+      # 1. Only triggered for single-month views (not a frequent operation)
+      # 2. Reuses income_statement logic which handles complex categorization rules
+      # 3. Alternative of duplicating income_statement logic in a single query is error-prone
+      
       trends = []
       current_date = @start_date
 
