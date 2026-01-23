@@ -71,10 +71,10 @@ class Budget::VarianceCalculatorTest < ActiveSupport::TestCase
       assert cv.key?(:variance)
       assert cv.key?(:variance_percent)
       assert cv.key?(:over_budget)
-      
+
       # Verify variance calculation
       assert_equal cv[:budgeted] - cv[:actual], cv[:variance]
-      
+
       # Verify over_budget flag
       assert_equal cv[:variance] < 0, cv[:over_budget]
     end
