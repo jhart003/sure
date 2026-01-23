@@ -31,7 +31,7 @@ RUN apt-get update -qq \
     postgresql-client \
     procps \
     wget \
-  && rm -rf /var/lib/apt/lists /var/cache/apt/archives
+  && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 # Install Chrome for system tests (amd64 only - Chrome not available for arm64)
 RUN if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
