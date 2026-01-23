@@ -169,9 +169,10 @@ export default class extends Controller {
     const xAxis = d3
       .axisBottom(this._d3XScale)
       .tickFormat((d, i) => {
-        // For daily data (when we have more than 12 data points, likely daily),
-        // only show labels for first, 15th, and last day
+        // For daily data (more than 12 data points),
+        // only show labels for first, middle (15th when available), and last day
         if (this.dataValue.length > this.constructor.DAILY_DATA_THRESHOLD) {
+          // Use 15th day as middle when dataset is large enough, otherwise use a day before the last
           const middleIndex = Math.min(this.constructor.MIDDLE_DAY_INDEX, this.dataValue.length - 2);
           if (i === 0 || i === middleIndex || i === this.dataValue.length - 1) {
             return this.dataValue[i]?.month || "";
