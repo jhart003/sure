@@ -325,14 +325,14 @@ class ReportsController < ApplicationController
       # 1. Only triggered for single-month views (not a frequent operation)
       # 2. Reuses income_statement logic which handles complex categorization rules
       # 3. Alternative of duplicating income_statement logic in a single query is error-prone
-      
+
       trends = []
       current_date = @start_date
 
       while current_date <= @end_date
         # Get cumulative totals from start of month to current day
         period = Period.custom(start_date: @start_date, end_date: current_date)
-        
+
         daily_income = Current.family.income_statement.income_totals(period: period).total
         daily_expenses = Current.family.income_statement.expense_totals(period: period).total
 
