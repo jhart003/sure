@@ -15,7 +15,7 @@
 - Updated repository definition to use signed-by syntax: `deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg]`
 
 **Files Modified**:
-- `Dockerfile.test` (lines 36-43)
+- `Dockerfile.test` (lines 37-43)
 
 ### 2. Dockerfile.test - Multi-Architecture Chrome Installation
 **Problem**: Chrome is only available for amd64 architecture, not arm64. The initial fix didn't account for multi-platform builds, causing failures when building for ARM64.
@@ -33,14 +33,14 @@ RUN if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
       && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
       && apt-get update -qq \
       && apt-get -y install --no-install-recommends google-chrome-stable \
-      && rm -rf /var/lib/apt/lists /var/cache/apt/archives; \
+      && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives; \
     fi
 ```
 
 **Note**: Initially used cache mounts (`--mount=type=cache`) which caused issues during the merge process. Removed in favor of standard cleanup.
 
 **Files Modified**:
-- `Dockerfile.test` (lines 36-43)
+- `Dockerfile.test` (lines 37-43)
 
 ### 3. Ruby Linting Failures - Trailing Whitespace
 **Problem**: CI lint job was failing due to trailing whitespace in Ruby files, preventing the publish workflow from completing.
