@@ -33,11 +33,11 @@ RUN if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
       && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
       && apt-get update -qq \
       && apt-get -y install --no-install-recommends google-chrome-stable \
-      && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives; \
+      && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*; \
     fi
 ```
 
-**Note**: Initially used cache mounts (`--mount=type=cache`) which caused issues during the merge process. Removed in favor of standard cleanup.
+**Note**: Initially used cache mounts (`--mount=type=cache`) which caused Docker build failures during the workflow merge process. Removed in favor of standard cleanup approach.
 
 **Files Modified**:
 - `Dockerfile.test` (lines 37-43)
