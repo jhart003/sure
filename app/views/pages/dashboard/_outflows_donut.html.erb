@@ -15,18 +15,14 @@
       <!-- Donut Chart -->
       <div class="w-full lg:w-1/3 max-w-[300px] px-4">
         <div class="h-[300px] relative"
-          data-controller="donut-chart"
-          data-donut-chart-segments-value="<%= outflows_data[:categories].to_json %>"
-          data-donut-chart-segment-opacity-value="1.0"
-          data-donut-chart-extended-hover-value="true"
-          data-donut-chart-hover-extension-value="3"
-          data-donut-chart-enable-click-value="true"
-          data-donut-chart-start-date-value="<%= period.date_range.first %>"
-          data-donut-chart-end-date-value="<%= period.date_range.last %>">
-          <div data-donut-chart-target="chartContainer" class="absolute inset-0 pointer-events-none"></div>
+          data-controller="outflows-donut-chart"
+          data-outflows-donut-chart-segments-value="<%= outflows_data[:categories].to_json %>"
+          data-outflows-donut-chart-start-date-value="<%= period.date_range.first %>"
+          data-outflows-donut-chart-end-date-value="<%= period.date_range.last %>">
+          <div data-outflows-donut-chart-target="chartContainer" class="absolute inset-0 pointer-events-none"></div>
 
-          <div data-donut-chart-target="contentContainer" class="flex justify-center items-center h-full">
-            <div data-donut-chart-target="defaultContent" class="flex flex-col items-center">
+          <div data-outflows-donut-chart-target="contentContainer" class="flex justify-center items-center h-full">
+            <div data-outflows-donut-chart-target="defaultContent" class="flex flex-col items-center">
               <div class="text-secondary text-sm mb-2">
                 <span><%= t("pages.dashboard.outflows_donut.total_outflows") %></span>
               </div>
@@ -105,14 +101,14 @@
                   data: {
                     turbo_frame: "_top",
                     category_id: category[:id],
-                    action: "mouseenter->donut-chart#highlightSegment mouseleave->donut-chart#unhighlightSegment"
+                    action: "mouseenter->outflows-donut-chart#highlightSegment mouseleave->outflows-donut-chart#unhighlightSegment"
                   } do %>
                 <%= category_content %>
               <% end %>
             <% else %>
               <div class="flex items-center justify-between mx-3 p-3 rounded-lg group gap-3"
                   data-category-id="<%= category[:id] %>"
-                  data-action="mouseenter->donut-chart#highlightSegment mouseleave->donut-chart#unhighlightSegment">
+                  data-action="mouseenter->outflows-donut-chart#highlightSegment mouseleave->outflows-donut-chart#unhighlightSegment">
                 <%= category_content %>
               </div>
             <% end %>
