@@ -1,0 +1,112 @@
+version: '3.8'
+
+# Example Docker Compose file using pre-built GHCR images
+# This is the fastest way to get Sure running without building locally
+# For more information, see docs/hosting/GHCR_IMAGES.md
+
+services:
+  # Sure web application (pre-built from GHCR)
+  web:
+    image: ghcr.io/jhart003/sure:latest
+    ports:
+      - "3000:3000"
+    environment:
+      # Database configuration
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-password}@db:5432/sure_production
+      
+      # Redis configuration
+      REDIS_URL: redis://redis:6379/0
+      
+      # Rails configuration
+      RAILS_ENV: production
+      RAILS_LOG_TO_STDOUT: "true"
+      RAILS_SERVE_STATIC_FILES: "true"
+      
+      # Security - GENERATE YOUR OWN SECRETS!
+      # Use: openssl rand -hex 64
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?Please set SECRET_KEY_BASE in .env file}
+      
+      # Optional: Force HTTPS in production
+      # RAILS_FORCE_SSL: "true"
+      
+      # Optional: Set your app hostname
+      # GOOD_JOB_EXECUTION_MODE: async
+      # APP_DOMAIN: your-domain.com
+    
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/up"]
+      interval: 30s
+      timeout: 3s
+      start_period: 60s
+      retries: 3
+    
+    restart: unless-stopped
+
+  # Background job processor
+  worker:
+    image: ghcr.io/jhart003/sure:latest
+    command: bundle exec sidekiq -c 5
+    environment:
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-password}@db:5432/sure_production
+      REDIS_URL: redis://redis:6379/0
+      RAILS_ENV: production
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?Please set SECRET_KEY_BASE in .env file}
+    
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    
+    restart: unless-stopped
+
+  # PostgreSQL database
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: sure_production
+      PGDATA: /var/lib/postgresql/data/pgdata
+    
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    
+    restart: unless-stopped
+
+  # Redis for caching and job queue
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    
+    volumes:
+      - redis_data:/data
+    
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# Optional: Add a reverse proxy like Caddy or nginx for HTTPS
+# See docs/hosting/DOCKER_DEPLOYMENT.md for examples

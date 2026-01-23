@@ -65,7 +65,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=sha,prefix={{branch}}-
+            type=sha
             type=raw,value=latest,enable={{is_default_branch}}
             type=raw,value=stable,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
       
@@ -74,6 +74,7 @@ jobs:
         run: echo "version=$(cat .ruby-version)" >> $GITHUB_OUTPUT
       
       - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -96,6 +97,58 @@ jobs:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.build.outputs.digest }}
           push-to-registry: true
+      
+      - name: Make package public
+        if: github.event_name != 'pull_request'
+        run: |
+          PACKAGE_NAME=$(echo "${{ env.IMAGE_NAME }}" | cut -d'/' -f2)${{ matrix.image-suffix }}
+          
+          # Wait for package to be available and make it public
+          MAX_RETRIES=5
+          RETRY_DELAY=10
+          
+          for i in $(seq 1 $MAX_RETRIES); do
+            echo "Attempt $i of $MAX_RETRIES to check package visibility..."
+            
+            # Get package visibility
+            VISIBILITY=$(curl -s \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/user/packages/container/${PACKAGE_NAME}" \
+              | jq -r '.visibility // "unknown"')
+            
+            echo "Current package visibility: $VISIBILITY"
+            
+            if [ "$VISIBILITY" = "public" ]; then
+              echo "✓ Package is already public"
+              exit 0
+            elif [ "$VISIBILITY" != "unknown" ]; then
+              # Package exists but is not public - update it
+              echo "Setting package visibility to public..."
+              RESPONSE=$(curl -s -w "\n%{http_code}" -X PATCH \
+                -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                -H "Accept: application/vnd.github.v3+json" \
+                "https://api.github.com/user/packages/container/${PACKAGE_NAME}" \
+                -d '{"visibility":"public"}')
+              
+              HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+              if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "204" ]; then
+                echo "✓ Package visibility updated to public"
+                exit 0
+              else
+                echo "Failed to update visibility (HTTP $HTTP_CODE)"
+              fi
+            else
+              # Package not found yet
+              echo "Package not found yet, waiting ${RETRY_DELAY}s..."
+              if [ $i -lt $MAX_RETRIES ]; then
+                sleep $RETRY_DELAY
+              fi
+            fi
+          done
+          
+          echo "⚠ Could not make package public automatically. You may need to set visibility manually in GitHub settings."
+          echo "Visit: https://github.com/users/${{ github.repository_owner }}/packages/container/${PACKAGE_NAME}/settings"
 
   # Security scanning
   scan:

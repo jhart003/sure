@@ -6,13 +6,19 @@ Complete documentation for deploying Sure with Docker.
 
 ### Getting Started
 
-1. **[Quick Start Guide](DOCKER_QUICKSTART.md)** ⚡
+1. **[GHCR Images Guide](GHCR_IMAGES.md)** 🎯
+   - Use official pre-built Docker images
+   - Fastest way to deploy Sure
+   - No build required - just pull and run
+   - **Best for:** Quick deployment and production use
+
+2. **[Quick Start Guide](DOCKER_QUICKSTART.md)** ⚡
    - Get up and running in 5 minutes
    - Common commands and examples
    - Quick troubleshooting tips
    - **Best for:** First-time users who want to try Sure quickly
 
-2. **[Self-Hosting Guide](docker.md)** 📘
+3. **[Self-Hosting Guide](docker.md)** 📘
    - Standard deployment process
    - Step-by-step setup instructions
    - Configuration and updates
@@ -46,6 +52,7 @@ Complete documentation for deploying Sure with Docker.
 
 **I want to...**
 
+- **Use pre-built images** → [GHCR Images Guide](GHCR_IMAGES.md)
 - **Try Sure locally** → [Quick Start Guide](DOCKER_QUICKSTART.md)
 - **Deploy to production** → [Self-Hosting Guide](docker.md) + [Deployment Checklist](DOCKER_CHECKLIST.md)
 - **Develop Sure** → [Comprehensive Guide - Development Section](DOCKER_DEPLOYMENT.md#development-workflow)
@@ -59,7 +66,10 @@ Sure includes several utility scripts to make Docker operations easier:
 ### Build and Deploy
 
 ```bash
-# Build production image
+# Pull pre-built image from GHCR (recommended)
+docker pull ghcr.io/jhart003/sure:latest
+
+# Or build production image locally
 ./bin/docker-build production
 
 # Push to GitHub Container Registry
@@ -97,7 +107,19 @@ Sure includes several utility scripts to make Docker operations easier:
 
 ## 🐳 Docker Images
 
-Sure provides multiple Docker images optimized for different use cases:
+Sure provides multiple Docker images optimized for different use cases. All images are available on [GitHub Container Registry (GHCR)](https://github.com/jhart003/sure/pkgs/container/sure).
+
+### Pre-built Images (Recommended)
+
+| Image | Purpose | GHCR URL | Size |
+|-------|---------|----------|------|
+| Production | Production deployment | `ghcr.io/jhart003/sure:latest` | ~350MB |
+| Development | Development with hot-reload | `ghcr.io/jhart003/sure-dev:latest` | ~600MB |
+| Test | CI/CD with test tools | `ghcr.io/jhart003/sure-test:latest` | ~700MB |
+
+See the [GHCR Images Guide](GHCR_IMAGES.md) for more details.
+
+### Local Build Images
 
 | Image | Purpose | Dockerfile | Size |
 |-------|---------|------------|------|
@@ -135,17 +157,24 @@ docker compose -f docker-compose.dev.yml exec web bin/rails console
 ### Production Deployment
 
 ```bash
-# 1. Download compose file
+# 1. Pull pre-built image (recommended)
+docker pull ghcr.io/jhart003/sure:latest
+
+# 2. Download compose file
 curl -o compose.yml https://raw.githubusercontent.com/we-promise/sure/main/compose.example.yml
 
-# 2. Configure environment
+# 3. Configure environment
 cp .env.example .env
 vim .env  # Add your secrets
 
-# 3. Start services
+# 4. Update compose.yml to use GHCR image
+# Change: build: .
+# To: image: ghcr.io/jhart003/sure:latest
+
+# 5. Start services
 docker compose up -d
 
-# 4. Verify deployment
+# 6. Verify deployment
 docker compose ps
 docker compose logs -f web
 ```

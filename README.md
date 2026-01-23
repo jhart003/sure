@@ -45,6 +45,11 @@ Sure is a fully working personal finance app that can be [self hosted with Docke
 
 ### Docker Deployment Options
 
+**Using Pre-built Images (Recommended):**
+- [GHCR Images Guide](docs/hosting/GHCR_IMAGES.md) - Use official pre-built Docker images
+- Images are publicly available at `ghcr.io/jhart003/sure:latest`
+- No build required - just pull and run!
+
 **Production Deployment:**
 - [Self-Hosting Guide](docs/hosting/docker.md) - Complete guide for production deployment
 - [Comprehensive Docker Guide](docs/hosting/DOCKER_DEPLOYMENT.md) - In-depth Docker documentation
@@ -59,7 +64,10 @@ docker compose -f docker-compose.dev.yml up
 
 **Quick Start Commands:**
 ```sh
-# Build production image
+# Pull pre-built image from GHCR
+docker pull ghcr.io/jhart003/sure:latest
+
+# Or build production image locally
 ./bin/docker-build production
 
 # Build and push to GitHub Container Registry
